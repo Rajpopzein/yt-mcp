@@ -6,7 +6,7 @@ from urllib.parse import urlparse, parse_qs
 import httpx
 
 # Local port to run redirect server
-PORT = 8080
+PORT = 8000
 REDIRECT_URI = f"http://localhost:{PORT}/"
 
 # Global variable to capture the auth code
@@ -76,7 +76,7 @@ def main():
     print("\nOpening your browser to authorize access to YouTube Analytics...")
     webbrowser.open(auth_url)
     
-    print("Waiting for callback on http://localhost:8080/ ...")
+    print(f"Waiting for callback on {REDIRECT_URI} ...")
     server.handle_request() # Wait for a single request
     server.server_close()
     

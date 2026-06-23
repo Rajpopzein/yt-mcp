@@ -50,6 +50,18 @@ async def test_mcp_tools():
         print(f"[OK] get_channel_videos tool OK.")
         print(f"Videos result: {videos_json}")
 
+        # Call get_video_analytics (New Tool)
+        print("\nCalling get_video_analytics for video ID 'bfvS1UeAkN0'...")
+        analytics_json = await mcp.call_tool("get_video_analytics", arguments={"video_ids": "bfvS1UeAkN0"})
+        print(f"[OK] get_video_analytics tool OK.")
+        print(f"Video Analytics result: {analytics_json}")
+
+        # Call get_channel_video_analytics (New Tool)
+        print("\nCalling get_channel_video_analytics for handle 'GoogleDevelopers'...")
+        channel_analytics_json = await mcp.call_tool("get_channel_video_analytics", arguments={"handle": "GoogleDevelopers", "limit": 2})
+        print(f"[OK] get_channel_video_analytics tool OK.")
+        print(f"Channel Video Analytics result: {channel_analytics_json}")
+
     except Exception as e:
         print(f"Tool Test Failed: {e}")
 

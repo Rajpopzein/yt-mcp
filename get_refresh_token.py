@@ -65,7 +65,13 @@ def main():
     )
     
     # Start temporary local HTTP server
-    server = HTTPServer(("localhost", PORT), OAuthRedirectHandler)
+    try:
+        server = HTTPServer(("localhost", PORT), OAuthRedirectHandler)
+    except PermissionError as e:
+        print(f"\nError: Could not bind to port {PORT} ({str(e)}).")
+        print("This usually means another program (such as your Uvicorn dev server running on port 8080) is already using this port.")
+        print(f"Please stop the program using port {PORT} and try running this script again, or modify the PORT variable at the top of get_refresh_token.py (and update your Google Cloud Console redirect URI accordingly).")
+        sys.exit(1)
     
     print("\nOpening your browser to authorize access to YouTube Analytics...")
     webbrowser.open(auth_url)

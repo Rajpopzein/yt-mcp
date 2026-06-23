@@ -1,16 +1,23 @@
 ## Why
 
-Users need a way to retrieve detailed performance metrics (such as view counts, like counts, and comment counts) and metadata (such as video duration and resolution) for specific YouTube videos. Adding video-level analytics enables users to analyze content performance directly via MCP.
+Users need access to private, deep video performance metrics (such as watch time, average view duration, average view percentage/retention, and subscriber changes) for their own YouTube channel. These metrics are not available in the public YouTube Data API and require integration with the secure YouTube Analytics API via OAuth2.
 
 ## What Changes
 
-- Expose a new tool `get_video_analytics` to query metrics and metadata for specific YouTube video IDs.
-- Expose a new tool `get_channel_video_analytics` to fetch recent uploads from a channel and return them enriched with detailed analytics (likes, views, comments, duration).
-- Implement batch querying of the YouTube Data API `/videos` endpoint (up to 50 videos at once) for high performance.
+- Support secure OAuth2 token refresh in Python using a client ID, client secret, and refresh token loaded from the `.env` file.
+- Implement integration with the YouTube Analytics API (`youtubeanalytics.googleapis.com/v2/reports`) to retrieve private video metrics:
+  - `views`: Total views.
+  - `estimatedMinutesWatched`: Total watch time in minutes.
+  - `averageViewDuration`: Average watch duration in seconds.
+  - `averageViewPercentage`: Retention rate percentage.
+  - `subscribersGained` / `subscribersLost`: Subscriber impact.
+  - `likes` / `comments` / `shares`: Deeper engagement metrics.
+- Update `get_video_analytics` to return both public Data API stats and private Analytics API stats when OAuth2 credentials are provided.
+- Provide a detailed guide in `README.md` on how to obtain Google OAuth2 credentials and a refresh token.
 
 ## Capabilities
 
 ### New Capabilities
-- `youtube-video-analytics`: Retrieve metrics (views, likes, comments) and metadata (duration, resolution, tags) for individual videos or a list of videos.
+- `youtube-video-analytics`: Retrieve public metadata/statistics, plus private YouTube Analytics API metrics (watch time, retention, subscriber impact) via OAuth2.
 
 ### Modified Capabilities

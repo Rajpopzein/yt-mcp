@@ -1,27 +1,35 @@
 ## Context
 
-The current Python MCP server retrieves basic channel statistics and lists uploads, but does not provide rich performance metrics (views, likes, comments) or content metadata (duration, resolution, definition) for individual videos. We will implement these capabilities by integrating the YouTube Data API `/videos` endpoint.
+The Python MCP server retrieves basic channel statistics and public video analytics (views, likes, comments, duration, definition) from the YouTube Data API. To expose private, deep analytics metrics (such as impressions, CTR, watch time, and subscriber gains/losses) for the authenticated channel, we will integrate the YouTube Analytics API using an OAuth2 token refresh flow.
 
 ## Goals / Non-Goals
 
 **Goals:**
-- Implement an async function in `api/youtube.py` to fetch video details from `/youtube/v3/videos`.
-- Expose the `get_video_analytics` tool to fetch statistics for a list of video IDs.
-- Expose the `get_channel_video_analytics` tool to fetch recent uploads for a channel with their metrics resolved and populated in a single call.
-- Support batching up to 50 video IDs in a single request to conserve API quotas and reduce network latency.
+- Implement an OAuth2 access token refresh client helper in `api/youtube.py` that refreshes tokens dynamically using client credentials and a refresh token from the environment.
+- Cache the access token in memory to avoid token refresh requests on every tool call.
+- Query private video reports from the YouTube Analytics API endpoint: `GET https://youtubeanalytics.googleapis.com/v2/reports`.
+- Fetch `views`, `estimatedMinutesWatched`, `averageViewDuration`, `averageViewPercentage`, `subscribersGained`, `subscribersLost`, `likes`, `comments`, `shares`, `video_thumbnail_impressions`, and `video_thumbnail_impressions_click_rate` metrics.
+- Merge the private analytics fields under an `analytics` key in `get_video_analytics` and `get_channel_video_analytics` responses.
+- Fall back gracefully to public-only metrics if OAuth2 credentials are not set up or invalid.
 
 **Non-Goals:**
-- Integrating the YouTube Analytics API (which requires OAuth 2.0 user login). All data will be queried using the public YouTube Data API v3 and the configured API Key.
+- Direct user interactive OAuth2 redirects. The server is designed to run non-interactively using static client credentials and a refresh token.
 
 ## Decisions
 
-- **YouTube Videos Endpoint**: `/youtube/v3/videos?part=snippet,statistics,contentDetails&id={ids}&key={apiKey}`.
-- **Batch Processing**: The `id` parameter takes a comma-separated list of IDs. We will split input strings, clean up whitespaces, chunk into lists of max 50 items (YouTube API limit), and query them in batches.
-- **Data Enrichment**: When querying channel video analytics, the server will first fetch the list of uploads using `fetch_channel_videos` (which returns only basic data like titles and IDs), then extract the video IDs, and call the batch video details endpoint to return fully populated analytics objects for the channel.
-- **Metadata Returned**:
-  - Statistics: `viewCount`, `likeCount`, `commentCount`.
-  - Content Details: `duration` (ISO 8601 duration), `dimension`, `definition` (hd/sd), `projection`.
+- **Token Refresh Endpoint**: `POST https://oauth2.googleapis.com/token` with urlencoded form parameters (`client_id`, `client_secret`, `refresh_token`, `grant_type=refresh_token`).
+- **Reports Query Endpoint**: `GET https://youtubeanalytics.googleapis.com/v2/reports` with parameters:
+  - `ids=channel==MINE`
+  - `startDate=2005-01-01`
+  - `endDate=<current_date>`
+  - `metrics=views,estimatedMinutesWatched,averageViewDuration,averageViewPercentage,subscribersGained,subscribersLost,likes,comments,shares,video_thumbnail_impressions,video_thumbnail_impressions_click_rate`
+  - `dimensions=video`
+  - `filters=video==<video_id_1>,<video_id_2>,...`
+- **Graceful Error Recovery**: If query fails on `video_thumbnail_impressions` or other metrics, query again using a fallback list of core metrics to ensure high resilience.
+- **Access Token Caching**: Maintain `_token_cache` in-memory. Refresh only when within 60 seconds of expiration.
 
 ## Risks / Trade-offs
 
-- **YouTube API Quotas**: Resolving a channel's videos details takes 2 API requests (1 for playlist items and 1 for batch video details), costing only 2 quota units. This remains highly performant and secure against quota exhaustion.
+- **Security of Refresh Token**: The refresh token has full access to YouTube Analytics. It must be kept secure in environment variables and never committed to source control.
+- **Data Latency**: YouTube Analytics API data is not in real-time and has up to 1-2 days of latency. This is a characteristic of the YouTube Analytics platform itself.
+

@@ -98,3 +98,55 @@ Retrieves recently uploaded videos for a channel.
   - `channel_id` (string, optional)
   - `handle` (string, optional)
   - `limit` (number, optional, default: 10, max: 50): Number of videos to retrieve.
+
+### 3. `get_video_analytics`
+Retrieves public statistics (views, likes, comments) and metadata (duration, definition). When OAuth2 is configured, it also fetches private Analytics API metrics (impressions, CTR, watch time, retention/average percentage, subscriber gains/losses, shares).
+- **Arguments**:
+  - `video_ids` (string, required): Comma-separated list of video IDs (e.g. `bfvS1UeAkN0,qnl8-PBJNu4`).
+
+### 4. `get_channel_video_analytics`
+Retrieves recent uploads for a channel fully enriched with public statistics and private Analytics API metrics (if OAuth2 is configured).
+- **Arguments**:
+  - `channel_id` (string, optional)
+  - `handle` (string, optional)
+  - `limit` (number, optional, default: 10, max: 50)
+
+---
+
+## Private YouTube Analytics Setup (OAuth2)
+
+To retrieve private video-level performance metrics (such as CTR, impressions, average watch duration, and subscriber changes), you must obtain Google OAuth2 Client credentials and a refresh token.
+
+### 1. Google Cloud Console Setup
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a new project (or select an existing one).
+3. Enable both the **YouTube Analytics API** and the **YouTube Data API v3**.
+4. Configure the **OAuth Consent Screen**:
+   - Choose **External** user type.
+   - Enter standard details (AppName, Support Email).
+   - Add your own email as a **Test User** (required while in testing status).
+5. Create Credentials:
+   - Go to **Credentials** -> **Create Credentials** -> **OAuth Client ID**.
+   - Select **Web application** as application type.
+   - Add `http://localhost:8080/` under **Authorized redirect URIs**.
+   - Copy the generated **Client ID** and **Client Secret**.
+
+### 2. Generate the Refresh Token
+You can easily generate your refresh token using the helper script included in the repository:
+1. Run the helper script:
+   ```bash
+   python get_refresh_token.py
+   ```
+2. Enter your **Client ID** and **Client Secret** when prompted.
+3. The script will automatically open your web browser to sign in to your Google Account.
+4. Sign in with the account owning the YouTube channel and grant the permissions.
+5. Return to your terminal to copy the generated **Refresh Token**.
+
+### 3. Environment Variables
+Add the generated credentials to your `.env` (or Vercel Environment Variables):
+```env
+YOUTUBE_CLIENT_ID=your_client_id
+YOUTUBE_CLIENT_SECRET=your_client_secret
+YOUTUBE_REFRESH_TOKEN=your_refresh_token
+```
+

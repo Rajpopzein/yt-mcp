@@ -1,12 +1,18 @@
+
 import json
 from typing import Optional
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from api.youtube import fetch_channel_details, fetch_channel_videos
 
-# Initialize FastMCP server
-mcp = FastMCP("youtube-channel-mcp")
+# Initialize FastMCP server with DNS rebinding protection disabled
+# This prevents "invalid header" / "invalid origin" errors when accessed by web/desktop clients or hosted on Vercel.
+mcp = FastMCP(
+    "youtube-channel-mcp",
+    transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)
+)
 
 # Register MCP tools
 @mcp.tool(

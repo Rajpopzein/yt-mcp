@@ -6,7 +6,7 @@ from urllib.parse import urlparse, parse_qs
 import httpx
 
 # Local port to run redirect server
-PORT = 8000
+PORT = 8080
 REDIRECT_URI = f"http://localhost:{PORT}/"
 
 # Global variable to capture the auth code

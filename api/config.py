@@ -1,5 +1,10 @@
 import os
+import contextvars
 from dotenv import load_dotenv
+
+# ContextVar to store current HTTP request headers in a task-safe way
+request_headers_ctx = contextvars.ContextVar("request_headers", default={})
+
 
 # Load environment variables from a .env file if present
 load_dotenv()

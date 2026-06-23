@@ -2,7 +2,7 @@ import os
 import httpx
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
-from api.config import get_api_key
+from api.config import get_api_key, request_headers_ctx
 
 # Simple in-memory cache for the access token to avoid refreshing on every request
 _token_cache = {
@@ -15,9 +15,27 @@ async def get_oauth2_access_token() -> Optional[str]:
     Retrieves a valid OAuth2 access token by refreshing it if necessary.
     Returns None if client ID, client secret, or refresh token are missing.
     """
+    # 1. Check if a bearer token was passed in the request headers (e.g. from ChatGPT OAuth)
+    headers = request_headers_ctx.get()
+    auth_header = headers.get("authorization", "") if headers else ""
+    if auth_header.lower().startswith("bearer "):
+        parts = auth_header.split(" ")
+        if len(parts) == 2:
+            token = parts[1].strip()
+            if token:
+                return token
+
+    # 2. Fall back to static credentials refresh flow
     client_id = os.getenv("YOUTUBE_CLIENT_ID")
     client_secret = os.getenv("YOUTUBE_CLIENT_SECRET")
     refresh_token = os.getenv("YOUTUBE_REFRESH_TOKEN")
+
+    if client_id:
+        client_id = client_id.strip()
+    if client_secret:
+        client_secret = client_secret.strip()
+    if refresh_token:
+        refresh_token = refresh_token.strip()
 
     if not client_id or not client_secret or not refresh_token:
         return None

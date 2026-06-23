@@ -124,9 +124,24 @@ async def test_private_analytics_mock():
         assert video["analytics"]["averageViewPercentage"] == 65.5
         print("[OK] Private analytics mock merge verified successfully!")
 
+async def test_header_bearer_oauth_mock():
+    print("\nTesting bearer token authentication extraction from headers...")
+    from api.config import request_headers_ctx
+    
+    # Set the ContextVar to simulate an incoming HTTP request with Authorization header
+    token = request_headers_ctx.set({"authorization": "Bearer TEST_ACCESS_TOKEN"})
+    try:
+        from api.youtube import get_oauth2_access_token
+        retrieved_token = await get_oauth2_access_token()
+        assert retrieved_token == "TEST_ACCESS_TOKEN"
+        print("[OK] Bearer token correctly extracted from request context headers!")
+    finally:
+        request_headers_ctx.reset(token)
+
 if __name__ == "__main__":
     test_routes()
     test_normalization()
     asyncio.run(test_private_analytics_mock())
+    asyncio.run(test_header_bearer_oauth_mock())
     asyncio.run(test_mcp_tools())
 
